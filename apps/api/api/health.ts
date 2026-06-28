@@ -1,5 +1,6 @@
 import { safeReadServerEnv } from '../lib/env.js'
 import { sendJson, type ApiRequest, type ApiResponse } from '../lib/http.js'
+import * as modules from '../modules/index.js'
 
 export default function handler(_req: ApiRequest, res: ApiResponse) {
   const envResult = safeReadServerEnv()
@@ -12,5 +13,6 @@ export default function handler(_req: ApiRequest, res: ApiResponse) {
       configured: envResult.success,
       dbName: envResult.success ? envResult.data.MONGODB_DB_NAME : null,
     },
+    modules: Object.keys(modules),
   })
 }
