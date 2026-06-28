@@ -12,6 +12,7 @@ export default function handler(_req: ApiRequest, res: ApiResponse) {
     env: {
       configured: envResult.success,
       dbName: envResult.success ? envResult.data.MONGODB_DB_NAME : null,
+      cronProtected: envResult.success ? Boolean(envResult.data.CRON_SECRET) : false,
     },
     modules: Object.keys(modules),
   })
