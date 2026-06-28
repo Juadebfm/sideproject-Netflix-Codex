@@ -1,0 +1,173 @@
+.app-shell {
+  min-height: 100svh;
+  color: var(--color-text-primary);
+  background:
+    radial-gradient(circle at top, rgba(255, 180, 77, 0.18), transparent 28%),
+    linear-gradient(180deg, #0b0d10 0%, #10141d 52%, #0b0d10 100%);
+}
+
+.hero {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 72px 0 40px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.hero-grid {
+  display: grid;
+  gap: 28px;
+  margin-top: 28px;
+}
+
+.hero-copy h1 {
+  max-width: 12ch;
+  margin: 0;
+  font-size: clamp(3rem, 8vw, 5.6rem);
+  line-height: 0.93;
+  letter-spacing: -0.06em;
+}
+
+.hero-copy p {
+  max-width: 58ch;
+  margin: 20px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 1.05rem;
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.cta-row button,
+.signal-card code {
+  font: inherit;
+}
+
+.cta-primary,
+.cta-secondary {
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    background 180ms ease;
+}
+
+.cta-primary {
+  color: #201100;
+  background: linear-gradient(135deg, #ffb44d 0%, #ff8a3d 100%);
+}
+
+.cta-secondary {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cta-primary:hover,
+.cta-secondary:hover {
+  transform: translateY(-1px);
+}
+
+.signal-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.signal-card {
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(19, 23, 34, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.24);
+}
+
+.signal-card span {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.signal-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 1.2rem;
+}
+
+.signal-card p {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+}
+
+.signal-card code {
+  display: inline-flex;
+  margin-top: 14px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 180, 77, 0.12);
+  color: #ffd8a4;
+  font-size: 0.9rem;
+}
+
+.foundation-strip {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 0 0 64px;
+}
+
+.foundation-strip h2 {
+  margin: 0 0 18px;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.foundation-strip ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.foundation-strip li {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 900px) {
+  .hero {
+    padding-top: 48px;
+  }
+
+  .signal-grid,
+  .foundation-strip ul {
+    grid-template-columns: 1fr;
+  }
+}
