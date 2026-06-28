@@ -9,5 +9,9 @@
   "devDependencies": {
     "@types/node": "^24.13.2",
     "typescript": "~6.0.2"
+  },
+  "dependencies": {
+    "mongodb": "^7.4.0",
+    "zod": "^4.4.3"
   }
 }
