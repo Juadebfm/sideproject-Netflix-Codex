@@ -1,30 +1,16 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
+import { safeReadServerEnv } from '../lib/env.js'
+import { sendJson, type ApiRequest, type ApiResponse } from '../lib/http.js'
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue }
+export default function handler(_req: ApiRequest, res: ApiResponse) {
+  const envResult = safeReadServerEnv()
 
-function sendJson(
-  res: ServerResponse<IncomingMessage>,
-  statusCode: number,
-  payload: JsonValue,
-) {
-  res.statusCode = statusCode
-  res.setHeader('Content-Type', 'application/json; charset=utf-8')
-  res.end(JSON.stringify(payload))
-}
-
-export default function handler(
-  _req: IncomingMessage,
-  res: ServerResponse<IncomingMessage>,
-) {
   sendJson(res, 200, {
     ok: true,
     app: 'netflix-codex-api',
-    message: 'PR 1 foundation ready',
+    message: 'PR 2 server foundation ready',
+    env: {
+      configured: envResult.success,
+      dbName: envResult.success ? envResult.data.MONGODB_DB_NAME : null,
+    },
   })
 }
