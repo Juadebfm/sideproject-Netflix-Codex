@@ -18,3 +18,11 @@ export type IngestionRun = {
   completedAt?: string
   status: 'pending' | 'running' | 'succeeded' | 'failed'
 }
+
+export type ScheduledIngestionResult = {
+  sourceCount: number
+  runCount: number
+  schedule: string | null
+  status: 'skipped' | 'completed'
+  runs: IngestionRun[]
+}
