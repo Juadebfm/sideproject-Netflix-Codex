@@ -1,0 +1,4 @@
+interface:
+  display_name: "Audit"
+  short_description: "Review an entire repository like a new engineer"
+  default_prompt: "Use $audit to review this entire repository the way a new engineer joining the project would, then report architecture strengths, quality gaps, onboarding risks, and the highest-value improvements."

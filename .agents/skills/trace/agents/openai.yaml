@@ -1,0 +1,4 @@
+interface:
+  display_name: "Trace"
+  short_description: "Debug with root-cause analysis"
+  default_prompt: "Use $trace to reproduce the problem, narrow the search area, identify the root cause, propose the smallest correct fix, and define the validation checks."

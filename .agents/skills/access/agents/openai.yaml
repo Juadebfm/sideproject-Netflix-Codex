@@ -1,0 +1,4 @@
+interface:
+  display_name: "Access"
+  short_description: "Review UI changes for accessibility"
+  default_prompt: "Use $access to review this UI change for semantics, labels, keyboard access, focus management, status feedback, contrast, and reduced-motion concerns."

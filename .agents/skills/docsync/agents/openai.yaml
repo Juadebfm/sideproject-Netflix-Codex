@@ -1,0 +1,4 @@
+interface:
+  display_name: "DocSync"
+  short_description: "Keep code and docs aligned"
+  default_prompt: "Use $docsync to determine which docs should change with this code update and prepare a focused documentation update plan."

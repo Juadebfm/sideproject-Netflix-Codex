@@ -1,0 +1,4 @@
+interface:
+  display_name: "Kickoff"
+  short_description: "Start a new project with better discovery"
+  default_prompt: "Use $kickoff to guide the start of a brand-new project by uncovering the user's pain points, goals, users, constraints, risks, and the SDLC foundation needed before implementation begins."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Frontend Design"
+  short_description: "Define a practical UI design system"
+  default_prompt: "Use $frontend-design-system to turn this project's kickoff and product context into a practical frontend design system with visual direction, tokens, component rules, responsive behavior, and accessibility standards."

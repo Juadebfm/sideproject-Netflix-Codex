@@ -1,0 +1,4 @@
+interface:
+  display_name: "Imprint"
+  short_description: "Capture reusable UI patterns"
+  default_prompt: "Use $imprint to extract reusable visual patterns from recent UI work and store them in ui-registry.md so future components stay consistent."

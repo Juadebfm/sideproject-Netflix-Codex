@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify"
+  short_description: "Plan or review the test strategy"
+  default_prompt: "Use $verify to define the required behaviors, map them to test layers, identify coverage gaps, and produce a practical verification plan for this change."

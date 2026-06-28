@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "skills": {
+    "access": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/access/SKILL.md",
+      "computedHash": "7949511510988e7df2abdf8855d13187c029590f05f6d64652768dd1cf759e6d"
+    },
+    "architect": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/architect/SKILL.md",
+      "computedHash": "fc15779694803b545c46121a7ab84d7cfdcd08267fc7ee6f40616930280c9f61"
+    },
+    "audit": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/audit/SKILL.md",
+      "computedHash": "3564e700b5d735395864fc5ef33a4ba4c9a3800115e788dab69ec97380592c00"
+    },
+    "backend-system-design": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/backend-system-design/SKILL.md",
+      "computedHash": "5accfbd1cffd16f8c3b48b4ea461b850897d51ef2c2e1fdb867953b65c66fc0d"
+    },
+    "bootstrap": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/bootstrap/SKILL.md",
+      "computedHash": "52095954f0adc68488661300c284645b6e3d587acd761f4fb154da02d945b967"
+    },
+    "docsync": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/docsync/SKILL.md",
+      "computedHash": "813405d0ba58b687410edc57bcb556ff9e8c3946a12689b7d596c11df34c51b2"
+    },
+    "frontend-design-system": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design-system/SKILL.md",
+      "computedHash": "9184b0b3a810a8109837ff80fa8c8865f96f2a339859c78607cf81f95cee6c4a"
+    },
+    "imprint": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/imprint/SKILL.md",
+      "computedHash": "11e0774861a0d0e55338c2179f88f7089953ebe76668d7623d5641e5a4b731fa"
+    },
+    "kickoff": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/kickoff/SKILL.md",
+      "computedHash": "0ac87dfd10deb6513fcdb8914e9ac708a283606ba918afadd3d79fef4257ea98"
+    },
+    "recover": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/recover/SKILL.md",
+      "computedHash": "7ee6c66f4a5053e035b85c3330985d87a39ebffe7a03302ded734c5a6e51e404"
+    },
+    "remember": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/remember/SKILL.md",
+      "computedHash": "f5fda970f384ff00cc69203a4e9a6631f8103502c4a8f87c6bda7660d53c1515"
+    },
+    "review": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/review/SKILL.md",
+      "computedHash": "505ca5bfbdd2c12d261b87eea52ddacf87c04a4ee496b4fede95bf2b8347f169"
+    },
+    "secure": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/secure/SKILL.md",
+      "computedHash": "a8fc7f7bdcbbbe9efa83a6ec66d545f6a2249a31657d39176e00922205e8cef2"
+    },
+    "ship": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ship/SKILL.md",
+      "computedHash": "0450c93a3c950ec325201240a5a785eb7fe1892c992bf2b9385f303c77599e0a"
+    },
+    "trace": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/trace/SKILL.md",
+      "computedHash": "931b02f60bbb5856a9b86a153516eb027bf9b23af988f824a42b9abd36c66b67"
+    },
+    "verify": {
+      "source": "Juadebfm/juadeb-gabriels-skills",
+      "sourceType": "github",
+      "skillPath": "skills/verify/SKILL.md",
+      "computedHash": "a021cc4c5c6d66132af6371ca8c0fd0e0fcbe1cf71e1152d132e35e83fb05fc6"
+    }
+  }
+}

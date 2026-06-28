@@ -1,0 +1,4 @@
+interface:
+  display_name: "Remember"
+  short_description: "Save or restore project memory"
+  default_prompt: "Use $remember to save the current project state into memory.md without persisting secrets, or restore that context at the start of a new session."

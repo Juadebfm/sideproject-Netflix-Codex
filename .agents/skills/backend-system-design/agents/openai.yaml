@@ -1,0 +1,4 @@
+interface:
+  display_name: "Backend System"
+  short_description: "Choose the right backend architecture"
+  default_prompt: "Use $backend-system-design to turn this project's kickoff context into a practical backend architecture recommendation based on budget, complexity, scale, integrations, and engineering standards."

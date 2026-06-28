@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review"
+  short_description: "Run a findings-first engineering review"
+  default_prompt: "Use $review to inspect this completed change for correctness, architecture, testing, security, accessibility, documentation, and release risk, then report findings by severity."

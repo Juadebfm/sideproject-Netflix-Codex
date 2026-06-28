@@ -1,0 +1,4 @@
+interface:
+  display_name: "Architect"
+  short_description: "Plan a feature before coding starts"
+  default_prompt: "Use $architect to read the current project context, align on ambiguous terms, surface the decisions that matter, and produce an implementation plan before coding."

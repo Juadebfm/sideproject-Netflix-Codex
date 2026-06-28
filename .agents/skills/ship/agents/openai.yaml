@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ship"
+  short_description: "Check release readiness before deploy"
+  default_prompt: "Use $ship to review whether this change is ready to release by checking migrations, config, observability, rollback readiness, smoke tests, and operational risk."
