@@ -6,9 +6,6 @@
   "scripts": {
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },
-  "dependencies": {
-    "@vercel/node": "^5.3.24"
-  },
   "devDependencies": {
     "@types/node": "^24.13.2",
     "typescript": "~6.0.2"
