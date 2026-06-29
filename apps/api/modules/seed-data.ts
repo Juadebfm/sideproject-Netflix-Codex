@@ -1,10 +1,19 @@
 import type { AnalyticsEventName } from './analytics/types.js'
-import type { CanonicalCategory } from './catalog/types.js'
 import type { RecommendationCard } from './recommendations/types.js'
 
 const now = new Date().toISOString()
 
-export type SeedCategory = CanonicalCategory & {
+export type SeedCategory = {
+  netflixCode: string
+  slug: string
+  title: string
+  summary: string
+  tags: string[]
+  regions: string[]
+  regionSignal: 'best-effort'
+  sourceRecordIds: string[]
+  createdAt: string
+  updatedAt: string
   groupFriendly: boolean
   moods: string[]
 }

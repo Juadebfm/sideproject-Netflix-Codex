@@ -159,7 +159,6 @@
 }
 
 .results-header p,
-.category-copy p,
 .category-meta,
 .status-banner {
   color: var(--color-text-secondary);
@@ -238,14 +237,8 @@
   line-height: 1.2;
 }
 
-.category-copy p {
-  margin: 6px 0 0;
-  font-size: 0.88rem;
-  line-height: 1.4;
-}
-
 .category-meta {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: 0.78rem;
   line-height: 1.35;
 }

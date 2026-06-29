@@ -2,9 +2,24 @@ import { collectionNames } from '../../lib/collection-name.js'
 import { assertCollectionReady } from '../../lib/catalog-state.js'
 import { getRequiredDatabase } from '../../lib/runtime.js'
 
-import type { CanonicalCategory, CatalogSearchInput } from './types.js'
+import type { CanonicalCategory, CatalogSearchInput, PublicCategory } from './types.js'
 
-export async function searchCatalog(input: CatalogSearchInput): Promise<CanonicalCategory[]> {
+function toPublicCategory(category: CanonicalCategory): PublicCategory {
+  const sourceLabels = Array.isArray(category.sourceLabels) ? category.sourceLabels : []
+
+  return {
+    netflixCode: category.netflixCode,
+    title: category.title,
+    regions: category.regions,
+    regionSignal: category.regionSignal,
+    sourceLabels,
+    sourceCount: sourceLabels.length,
+    titleSourceLabel: category.titleSourceLabel || sourceLabels[0] || 'Catalog refresh pending',
+    verificationState: category.verificationState ?? 'manual-curated',
+  }
+}
+
+export async function searchCatalog(input: CatalogSearchInput): Promise<PublicCategory[]> {
   const db = await getRequiredDatabase()
   await assertCollectionReady(
     db,
@@ -28,10 +43,10 @@ export async function searchCatalog(input: CatalogSearchInput): Promise<Canonica
       })
     : categories
 
-  return filtered.slice(0, limit)
+  return filtered.slice(0, limit).map(toPublicCategory)
 }
 
-export async function getCategoryByCode(netflixCode: string): Promise<CanonicalCategory | null> {
+export async function getCategoryByCode(netflixCode: string): Promise<PublicCategory | null> {
   const db = await getRequiredDatabase()
   await assertCollectionReady(
     db,
@@ -39,11 +54,11 @@ export async function getCategoryByCode(netflixCode: string): Promise<CanonicalC
     'Canonical catalog is unavailable',
   )
 
-  return (
-    (await db
-      .collection<CanonicalCategory>(collectionNames.canonicalCategories)
-      .findOne({ netflixCode })) ?? null
-  )
+  const category = await db
+    .collection<CanonicalCategory>(collectionNames.canonicalCategories)
+    .findOne({ netflixCode })
+
+  return category ? toPublicCategory(category) : null
 }
 
 export function getCatalogCollectionName() {

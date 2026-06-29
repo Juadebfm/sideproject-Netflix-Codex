@@ -9,6 +9,7 @@ import './App.css'
 import {
   buildNetflixGenreUrl,
   getRegionLabel,
+  getVerificationLabel,
   searchCategories,
   toUserMessage,
   type CanonicalCategory,
@@ -227,6 +228,10 @@ function App() {
             <ul className="category-list">
               {visibleCategories.map((category) => {
                 const isCopied = copiedCode === category.netflixCode
+                const sourceSummary =
+                  category.sourceCount > 1
+                    ? `${category.titleSourceLabel} title · cross-checked by ${category.sourceCount} sources`
+                    : `Source: ${category.titleSourceLabel}`
 
                 return (
                   <li key={category.netflixCode} className="category-row">
@@ -234,9 +239,9 @@ function App() {
                       <div className="category-code">{category.netflixCode}</div>
                       <div className="category-copy">
                         <h3>{category.title}</h3>
-                        <p>{category.summary}</p>
                         <div className="category-meta">
-                          <span>{category.slug}</span>
+                          <span>{getVerificationLabel(category.verificationState)}</span>
+                          <span>{sourceSummary}</span>
                           {category.regions.length > 0 ? (
                             <span>{getRegionLabel(category.regions)}</span>
                           ) : null}

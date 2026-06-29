@@ -1,11 +1,12 @@
 export type CanonicalCategory = {
   netflixCode: string
-  slug: string
   title: string
-  summary: string
-  tags: string[]
   regions: string[]
   regionSignal: 'best-effort'
+  sourceLabels: string[]
+  sourceCount: number
+  titleSourceLabel: string
+  verificationState: 'source-backed' | 'manual-curated'
 }
 
 export type RecommendationCard = {
@@ -191,6 +192,14 @@ export function getReasonLabel(reason: RecommendationCard['reason']) {
 
 export function getRegionLabel(regions: string[]) {
   return regions.join(', ')
+}
+
+export function getVerificationLabel(verificationState: CanonicalCategory['verificationState']) {
+  if (verificationState === 'manual-curated') {
+    return 'Manual curated'
+  }
+
+  return 'Source-backed'
 }
 
 export function toUserMessage(error: unknown, fallbackMessage: string) {

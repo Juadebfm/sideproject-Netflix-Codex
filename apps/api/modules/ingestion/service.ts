@@ -4,9 +4,7 @@ import { collectionNames } from '../../lib/collection-name.js'
 import type { CanonicalCategory } from '../catalog/types.js'
 import type { CuratedRecommendationRecord } from '../recommendations/types.js'
 import {
-  seedCategories,
   seedRecommendations,
-  type SeedCategory,
   type SeedRecommendation,
 } from '../seed-data.js'
 import {
@@ -79,28 +77,6 @@ function buildRawSourceRecord(
   }
 }
 
-function normalizeCategory(
-  category: SeedCategory,
-  source: IngestionSource,
-  sourceRecordId: string,
-  timestamp: string,
-): PreparedCanonicalCategoryCandidate {
-  return {
-    netflixCode: category.netflixCode,
-    slug: category.slug,
-    title: category.title,
-    summary: category.summary,
-    tags: category.tags,
-    regions: category.regions,
-    regionSignal: category.regionSignal,
-    sourceRecordIds: [sourceRecordId],
-    createdAt: timestamp,
-    updatedAt: timestamp,
-    sourceId: source.id,
-    sourcePriority: source.priority,
-  }
-}
-
 function normalizeRecommendation(
   recommendation: SeedRecommendation,
   source: IngestionSource,
@@ -156,20 +132,26 @@ export function mergeCanonicalCategories(
       const ordered = [...group].sort((left, right) => left.sourcePriority - right.sourcePriority)
       const winner = ordered[0]
       const title = ordered.find((candidate) => candidate.title.trim())?.title ?? winner.title
-      const summary =
-        ordered.find((candidate) => candidate.summary.trim())?.summary ?? winner.summary
 
       return {
         netflixCode,
         slug: ordered.find((candidate) => candidate.slug.trim())?.slug ?? winner.slug,
         title,
-        summary,
         tags: uniqueStrings(ordered.flatMap((candidate) => candidate.tags)),
         regions: uniqueStrings(ordered.flatMap((candidate) => candidate.regions)),
         regionSignal: winner.regionSignal,
         sourceRecordIds: uniqueStrings(
           ordered.flatMap((candidate) => candidate.sourceRecordIds),
         ),
+        sourceLabels: uniqueStrings(
+          ordered.flatMap((candidate) => candidate.sourceLabels),
+        ),
+        titleSourceLabel:
+          ordered.find((candidate) => candidate.title.trim())?.titleSourceLabel
+          ?? winner.titleSourceLabel,
+        verificationState:
+          ordered.find((candidate) => candidate.title.trim())?.verificationState
+          ?? winner.verificationState,
         createdAt: minIsoDate(ordered.map((candidate) => candidate.createdAt)),
         updatedAt: maxIsoDate(ordered.map((candidate) => candidate.updatedAt)),
       }
@@ -214,16 +196,10 @@ export function prepareStarterCatalogSnapshot(
   source: IngestionSource = starterCatalogSource,
   timestamp: string = new Date().toISOString(),
 ): PreparedStarterCatalogSnapshot {
-  const categoryRawRecords = seedCategories.map((category) =>
-    buildRawSourceRecord(source, 'category', timestamp, { ...category }),
-  )
   const recommendationRawRecords = seedRecommendations.map((recommendation) =>
     buildRawSourceRecord(source, 'recommendation', timestamp, { ...recommendation }),
   )
 
-  const canonicalCategories = seedCategories.map((category, index) =>
-    normalizeCategory(category, source, categoryRawRecords[index]._id, timestamp),
-  )
   const curatedRecommendations = seedRecommendations.map((recommendation, index) =>
     normalizeRecommendation(
       recommendation,
@@ -234,8 +210,8 @@ export function prepareStarterCatalogSnapshot(
   )
 
   return {
-    rawRecords: [...categoryRawRecords, ...recommendationRawRecords],
-    canonicalCategories,
+    rawRecords: recommendationRawRecords,
+    canonicalCategories: [],
     curatedRecommendations,
   }
 }

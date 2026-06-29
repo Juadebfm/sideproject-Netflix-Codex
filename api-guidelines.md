@@ -20,6 +20,8 @@
 - Return curated, user-safe data only.
 - Include clear error messages for invalid requests, empty results, and temporary failures.
 - Avoid leaking raw ingestion internals through public contracts.
+- Do not expose invented catalog descriptions as canonical truth. Public catalog rows should prefer source-backed title and safe provenance metadata.
+- If a public field is editorial rather than source-backed, model it separately instead of mixing it into canonical catalog fields.
 
 ## Validation Rules
 
