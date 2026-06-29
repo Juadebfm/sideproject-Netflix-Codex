@@ -1,6 +1,19 @@
 import { URL } from 'node:url'
 
-import { sendError, type ApiRequest, type ApiResponse, type JsonValue } from './http.js'
+import {
+  sendError,
+  setCorsHeaders,
+  type ApiRequest,
+  type ApiResponse,
+  type JsonValue,
+} from './http.js'
+
+export class InvalidJsonBodyError extends Error {
+  constructor() {
+    super('Request body must be valid JSON.')
+    this.name = 'InvalidJsonBodyError'
+  }
+}
 
 export function getRequestUrl(req: ApiRequest) {
   const host = req.headers.host ?? 'localhost'
@@ -34,11 +47,20 @@ export function requireMethod(
   res: ApiResponse,
   allowedMethod: string,
 ) {
+  setCorsHeaders(res)
+
+  if ((req.method ?? 'GET').toUpperCase() === 'OPTIONS') {
+    res.statusCode = 204
+    res.setHeader('Allow', `${allowedMethod.toUpperCase()}, OPTIONS`)
+    res.end()
+    return false
+  }
+
   if ((req.method ?? 'GET').toUpperCase() === allowedMethod.toUpperCase()) {
     return true
   }
 
-  res.setHeader('Allow', allowedMethod.toUpperCase())
+  res.setHeader('Allow', `${allowedMethod.toUpperCase()}, OPTIONS`)
   sendError(res, 405, `Method ${req.method ?? 'UNKNOWN'} not allowed`)
   return false
 }
@@ -58,5 +80,9 @@ export async function readJsonBody<T extends JsonValue = JsonValue>(
     return {} as T
   }
 
-  return JSON.parse(rawBody) as T
+  try {
+    return JSON.parse(rawBody) as T
+  } catch {
+    throw new InvalidJsonBodyError()
+  }
 }

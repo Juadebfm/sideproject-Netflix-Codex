@@ -33,12 +33,12 @@
   - Optional login only for saved preferences, feedback, or later personalization.
   - Role model for MVP: `public` and `admin` only. Avoid complex role systems early.
 - Data storage direction:
-  - Primary relational database for categories, code aliases, sources, region mappings, curated collections, users, saved items, and event aggregates.
+  - Primary MongoDB Atlas database for categories, code aliases, sources, region mappings, curated collections, users, saved items, and event aggregates.
   - Store raw ingested source records separately from normalized canonical records so cleanup is auditable.
   - Keep a small object-free footprint at first; no file storage is required unless poster/media caching is added later.
 - Async or background processing needs:
   - Scheduled ingestion and revalidation jobs are required.
-  - Use background tasks for source fetches, normalization, stale-code checks, and daily analytics aggregation.
+  - Use background tasks for source imports, normalization, stale-code checks, and daily analytics aggregation.
   - Do not put scraping or heavy normalization on live user requests.
 - Deployment direction:
   - One frontend deployment and one backend deployment, both on Vercel.
@@ -72,7 +72,8 @@
 - Validation expectations:
   - Validate all inbound requests, query params, event payloads, and env vars.
   - Sanitize and normalize all ingested external data before it reaches canonical tables.
-  - Tag every ingested record with source URL, fetch time, normalization status, and confidence notes.
+  - Tag every ingested record with provenance metadata such as source id, source version, fetch time, normalization status, and confidence notes.
+  - Merge duplicate category codes across sources before publishing canonical rows, with explicit source-priority rules when fields conflict.
 - Access control expectations:
   - Public read APIs should expose only curated data needed by clients.
   - Admin refresh tools, source inspection, and manual overrides must require admin auth and never be public.
@@ -91,7 +92,7 @@
 - What to build now:
   - Public search and recommendation APIs.
   - Canonical category/code schema with source provenance.
-  - Scheduled ingestion and normalization jobs.
+  - Scheduled ingestion and normalization jobs, starting with a curated starter dataset import and a small set of approved remote public-source adapters with explicit source-priority ordering.
   - Anonymous analytics pipeline and optional auth scaffolding.
   - Simple admin-safe manual override path for bad or stale code entries.
 - What to postpone:
@@ -110,7 +111,7 @@
 ### Open Questions
 
 - What level of completeness is expected for code coverage: curated best-effort, source-vetted completeness, or near-exhaustive catalog capture?
-- Which public sources are acceptable for ingestion under the project's legal and operational standards?
+- Which public sources are acceptable for ingestion under the project's legal and operational standards after the current `Netflix-Codes` and `Teen Vogue` integrations?
 - How much user-specific persistence is needed in the MVP beyond anonymous analytics?
 - Whether recommendation quality will begin as editorial curation, rule-based scoring, or a hybrid approach.
 - How reliable region-availability data can be without a paid provider.
@@ -119,5 +120,5 @@
 ### Suggested Next Steps
 
 - Use `bootstrap` to create shared project context files such as `context.md`, `architecture.md`, `security-baseline.md`, and `api-guidelines.md`.
-- Use `architect` next to turn this backend direction into feature slices, schema design, ingestion flow, and deployment milestones.
+- Use `verify` and `review` around the multi-source Mongo-backed ingestion slice to keep dedupe, source-priority, catalog availability, and cron behavior honest as more remote sources are added.
 - Keep `frontend-design-system.md` aligned with the API shape so search, filters, copy feedback, and deep-link states map cleanly onto backend responses.

@@ -10,7 +10,9 @@
     "dev:web": "npm --workspace @netflix-codex/web run dev",
     "build:web": "npm --workspace @netflix-codex/web run build",
     "lint:web": "npm --workspace @netflix-codex/web run lint",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:seed": "npm --workspace @netflix-codex/api run db:seed",
+    "test:api": "npm --workspace @netflix-codex/api test"
   },
   "engines": {
     "node": ">=24.0.0"

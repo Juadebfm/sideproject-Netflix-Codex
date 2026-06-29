@@ -1,7 +1,7 @@
 import { requireCronAccess } from '../../lib/cron.js'
-import { sendJson, type ApiRequest, type ApiResponse } from '../../lib/http.js'
+import { sendError, sendJson, type ApiRequest, type ApiResponse } from '../../lib/http.js'
 import { requireMethod } from '../../lib/request.js'
-import { getOptionalDatabase } from '../../lib/runtime.js'
+import { getRequiredDatabase } from '../../lib/runtime.js'
 import { runScheduledIngestion } from '../../modules/ingestion/index.js'
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
@@ -15,7 +15,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const db = await getOptionalDatabase()
+  let db
+
+  try {
+    db = await getRequiredDatabase()
+  } catch {
+    sendError(res, 503, 'Scheduled ingestion requires a configured database')
+    return
+  }
+
   const result = await runScheduledIngestion(db, access.schedule)
 
   sendJson(res, 200, {
@@ -23,7 +31,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     data: result,
     meta: {
       accessSource: access.source,
-      dbConnected: Boolean(db),
+      dbConnected: true,
     },
   })
 }

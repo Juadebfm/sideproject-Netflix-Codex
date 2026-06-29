@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -8,5 +8,5 @@
     "verbatimModuleSyntax": true,
     "noEmit": true
   },
-  "include": ["api/**/*.ts", "lib/**/*.ts", "modules/**/*.ts"]
+  "include": ["api/**/*.ts", "lib/**/*.ts", "modules/**/*.ts", "scripts/**/*.ts"]
 }

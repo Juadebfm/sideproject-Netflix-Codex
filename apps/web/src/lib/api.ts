@@ -4,6 +4,8 @@ export type CanonicalCategory = {
   title: string
   summary: string
   tags: string[]
+  regions: string[]
+  regionSignal: 'best-effort'
 }
 
 export type RecommendationCard = {
@@ -11,6 +13,8 @@ export type RecommendationCard = {
   title: string
   reason: 'editorial' | 'group-fit' | 'mood-match' | 'runtime-fit' | 'region-match'
   confidenceLabel: 'high' | 'medium' | 'emerging'
+  regions: string[]
+  regionSignal: 'best-effort'
 }
 
 type AnalyticsEventName =
@@ -23,61 +27,28 @@ type AnalyticsEventName =
 type ApiResponse<T> = {
   ok: boolean
   data: T
+  meta?: Record<string, unknown>
 }
 
-const fallbackCategories: CanonicalCategory[] = [
-  {
-    netflixCode: '1365',
-    slug: 'action-adventure',
-    title: 'Action and Adventure',
-    summary: 'Big-energy films for nights when browsing needs to end quickly.',
-    tags: ['action', 'fast-paced', 'group-friendly'],
-  },
-  {
-    netflixCode: '8711',
-    slug: 'thrillers',
-    title: 'Thrillers',
-    summary: 'High-tension picks when you want something gripping without guesswork.',
-    tags: ['thriller', 'tense', 'date-night'],
-  },
-  {
-    netflixCode: '7424',
-    slug: 'anime',
-    title: 'Anime',
-    summary: 'A focused entry point for viewers chasing standout anime finds.',
-    tags: ['anime', 'stylized', 'fandom'],
-  },
-  {
-    netflixCode: '783',
-    slug: 'children-family-movies',
-    title: 'Children and Family Movies',
-    summary: 'Safer family-first choices when a group needs an easier yes.',
-    tags: ['family', 'group-friendly', 'weekend'],
-  },
-]
-
-const fallbackRecommendations: RecommendationCard[] = [
-  {
-    categoryCode: '8711',
-    title: 'Thrillers for a no-scroll movie night',
-    reason: 'editorial',
-    confidenceLabel: 'high',
-  },
-  {
-    categoryCode: '783',
-    title: 'Family picks everyone can agree on',
-    reason: 'group-fit',
-    confidenceLabel: 'high',
-  },
-  {
-    categoryCode: '1365',
-    title: 'Fast, high-energy action tonight',
-    reason: 'mood-match',
-    confidenceLabel: 'medium',
-  },
-]
+export type RecommendationResponseMeta = {
+  count: number
+  requestedRegion: string | null
+  appliedRegion: string | null
+  regionFallback: boolean
+  availableRegions: string[]
+}
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
+
+class ApiError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
 
 function buildUrl(path: string) {
   if (!apiBaseUrl) {
@@ -89,42 +60,37 @@ function buildUrl(path: string) {
 
 async function fetchJson<T>(path: string, init?: RequestInit) {
   const response = await fetch(buildUrl(path), init)
+  const payload = (await response.json().catch(() => null)) as
+    | ApiResponse<T>
+    | {
+        error?: string
+      }
+    | null
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`)
+    const message =
+      payload && 'error' in payload && payload.error
+        ? payload.error
+        : `Request failed with status ${response.status}`
+    throw new ApiError(message, response.status)
   }
 
-  return (await response.json()) as ApiResponse<T>
+  return payload as ApiResponse<T>
 }
 
-export async function searchCategories(query: string) {
-  try {
-    const searchParams = new URLSearchParams()
+export async function searchCategories(query: string, limit: number = 250) {
+  const searchParams = new URLSearchParams()
 
-    if (query.trim()) {
-      searchParams.set('query', query.trim())
-    }
-
-    const response = await fetchJson<CanonicalCategory[]>(
-      `/api/search?${searchParams.toString()}`,
-    )
-
-    return response.data
-  } catch {
-    const normalizedQuery = query.trim().toLowerCase()
-
-    if (!normalizedQuery) {
-      return fallbackCategories
-    }
-
-    return fallbackCategories.filter((category) => {
-      return (
-        category.title.toLowerCase().includes(normalizedQuery) ||
-        category.slug.toLowerCase().includes(normalizedQuery) ||
-        category.tags.some((tag) => tag.toLowerCase().includes(normalizedQuery))
-      )
-    })
+  if (query.trim()) {
+    searchParams.set('query', query.trim())
   }
+
+  searchParams.set('limit', String(limit))
+
+  const response = await fetchJson<CanonicalCategory[]>(
+    `/api/search?${searchParams.toString()}`,
+  )
+  return response.data
 }
 
 export async function fetchRecommendations(input: {
@@ -132,40 +98,32 @@ export async function fetchRecommendations(input: {
   region?: string
   groupFriendly?: boolean
 }) {
-  try {
-    const searchParams = new URLSearchParams()
+  const searchParams = new URLSearchParams()
 
-    if (input.mood?.trim()) {
-      searchParams.set('mood', input.mood.trim())
-    }
+  if (input.mood?.trim()) {
+    searchParams.set('mood', input.mood.trim())
+  }
 
-    if (input.region?.trim()) {
-      searchParams.set('region', input.region.trim())
-    }
+  if (input.region?.trim()) {
+    searchParams.set('region', input.region.trim())
+  }
 
-    if (input.groupFriendly) {
-      searchParams.set('groupFriendly', 'true')
-    }
+  if (input.groupFriendly) {
+    searchParams.set('groupFriendly', 'true')
+  }
 
-    const response = await fetchJson<RecommendationCard[]>(
-      `/api/recommendations?${searchParams.toString()}`,
-    )
-
-    return response.data
-  } catch {
-    return fallbackRecommendations
+  const response = await fetchJson<RecommendationCard[]>(
+    `/api/recommendations?${searchParams.toString()}`,
+  )
+  return {
+    data: response.data,
+    meta: response.meta as RecommendationResponseMeta,
   }
 }
 
 export async function fetchCategory(code: string) {
-  try {
-    const response = await fetchJson<CanonicalCategory>(`/api/categories/${code}`)
-    return response.data
-  } catch {
-    return (
-      fallbackCategories.find((category) => category.netflixCode === code) ?? null
-    )
-  }
+  const response = await fetchJson<CanonicalCategory>(`/api/categories/${code}`)
+  return response.data
 }
 
 export async function trackAnalyticsEvent(input: {
@@ -229,4 +187,20 @@ export function getReasonLabel(reason: RecommendationCard['reason']) {
   }
 
   return 'Editorial pick'
+}
+
+export function getRegionLabel(regions: string[]) {
+  return regions.join(', ')
+}
+
+export function toUserMessage(error: unknown, fallbackMessage: string) {
+  if (error instanceof ApiError && error.message.trim()) {
+    return error.message
+  }
+
+  if (error instanceof Error && error.message.trim()) {
+    return error.message
+  }
+
+  return fallbackMessage
 }
