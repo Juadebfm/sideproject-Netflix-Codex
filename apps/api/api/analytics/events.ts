@@ -1,10 +1,10 @@
 import { z } from 'zod'
 
 import { sendError, sendJson, type ApiRequest, type ApiResponse } from '../../lib/http.js'
-import { readJsonBody, requireMethod } from '../../lib/request.js'
-import { getOptionalDatabase } from '../../lib/runtime.js'
+import { InvalidJsonBodyError, readJsonBody, requireMethod } from '../../lib/request.js'
+import { getRequiredDatabase } from '../../lib/runtime.js'
 import { trackAnalyticsEvent } from '../../modules/analytics/index.js'
-import { supportedAnalyticsEvents } from '../../modules/fixtures.js'
+import { supportedAnalyticsEvents } from '../../modules/seed-data.js'
 
 const analyticsEventSchema = z.object({
   name: z.enum(supportedAnalyticsEvents),
@@ -20,7 +20,19 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const rawBody = await readJsonBody(req)
+  let rawBody
+
+  try {
+    rawBody = await readJsonBody(req)
+  } catch (error) {
+    if (error instanceof InvalidJsonBodyError) {
+      sendError(res, 400, error.message)
+      return
+    }
+
+    throw error
+  }
+
   const parsedBody = analyticsEventSchema.safeParse(rawBody)
 
   if (!parsedBody.success) {
@@ -33,7 +45,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const db = await getOptionalDatabase()
+  let db
+
+  try {
+    db = await getRequiredDatabase()
+  } catch {
+    sendError(res, 503, 'Analytics storage is unavailable')
+    return
+  }
+
   const event = {
     ...parsedBody.data,
     occurredAt: parsedBody.data.occurredAt ?? new Date().toISOString(),

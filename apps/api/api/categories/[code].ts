@@ -1,4 +1,4 @@
-import { getOptionalDatabase } from '../../lib/runtime.js'
+import { CatalogUnavailableError } from '../../lib/catalog-state.js'
 import { sendError, sendJson, type ApiRequest, type ApiResponse } from '../../lib/http.js'
 import { requireMethod } from '../../lib/request.js'
 import { getCategoryByCode } from '../../modules/catalog/index.js'
@@ -21,8 +21,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     return
   }
 
-  const db = await getOptionalDatabase()
-  const category = await getCategoryByCode(db, code)
+  let category
+
+  try {
+    category = await getCategoryByCode(code)
+  } catch (error) {
+    const message =
+      error instanceof CatalogUnavailableError ? error.message : 'Catalog is unavailable'
+    sendError(res, 503, message)
+    return
+  }
 
   if (!category) {
     sendError(res, 404, 'Category not found')

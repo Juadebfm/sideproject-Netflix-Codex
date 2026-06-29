@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --project tsconfig.json --noEmit"
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "build:runtime": "tsc --project tsconfig.json --outDir .tmp/build --noEmit false",
+    "db:seed": "npm run build:runtime && node --env-file=../../.env .tmp/build/scripts/seed.js",
+    "test": "npm run build:runtime && node --test .tmp/build/lib/cron.test.js .tmp/build/modules/ingestion/service.test.js .tmp/build/modules/recommendations/service.test.js"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",

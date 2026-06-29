@@ -23,6 +23,13 @@
 - Logs and basic monitoring are available.
 - Rollback path is understood for schema or ingestion changes.
 
+## Current Deployment Shape
+
+- Deploy backend from `apps/api`
+- Deploy frontend from `apps/web`
+- Configure cron on the backend project only
+- Set `VITE_API_BASE_URL` in the frontend project to the backend production URL
+
 ## Current Gaps
 
 - TODO: define exact build/test commands after scaffolding

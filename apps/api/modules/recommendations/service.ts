@@ -1,41 +1,116 @@
-import type { Db } from 'mongodb'
-
 import { collectionNames } from '../../lib/collection-name.js'
-import { mockRecommendations } from '../fixtures.js'
-import type { RecommendationCard, RecommendationQuery } from './types.js'
+import { assertCollectionReady } from '../../lib/catalog-state.js'
+import { getRequiredDatabase } from '../../lib/runtime.js'
+import type {
+  CuratedRecommendationRecord,
+  RecommendationCard,
+  RecommendationQuery,
+  RecommendationResponseMeta,
+  RecommendationResult,
+} from './types.js'
 
-export async function getRecommendations(
-  db: Db | null,
+function normalizeRegion(region: string | undefined) {
+  return region?.trim().toUpperCase() || null
+}
+
+function normalizeMood(mood: string | undefined) {
+  return mood?.trim().toLowerCase() || null
+}
+
+function collectAvailableRegions(recommendations: RecommendationCard[]) {
+  return Array.from(
+    new Set(recommendations.flatMap((recommendation) => recommendation.regions)),
+  ).sort()
+}
+
+function toRecommendationCard(
+  recommendation: CuratedRecommendationRecord,
+): RecommendationCard {
+  return {
+    categoryCode: recommendation.categoryCode,
+    title: recommendation.title,
+    reason: recommendation.reason,
+    confidenceLabel: recommendation.confidenceLabel,
+    regions: recommendation.regions,
+    regionSignal: recommendation.regionSignal,
+  }
+}
+
+function buildMeta(
+  recommendations: RecommendationCard[],
+  requestedRegion: string | null,
+  appliedRegion: string | null,
+  regionFallback: boolean,
+): RecommendationResponseMeta {
+  return {
+    count: recommendations.length,
+    requestedRegion,
+    appliedRegion,
+    regionFallback,
+    availableRegions: collectAvailableRegions(recommendations),
+  }
+}
+
+export function buildRecommendationResult(
+  records: CuratedRecommendationRecord[],
   query: RecommendationQuery,
-): Promise<RecommendationCard[]> {
+): RecommendationResult {
   const limit = query.limit ?? 8
+  const normalizedMood = normalizeMood(query.mood)
+  const normalizedRegion = normalizeRegion(query.region)
 
-  if (db) {
-    const collection = db.collection<RecommendationCard>(collectionNames.curatedCollections)
-    const records = await collection.find({}).limit(limit).toArray()
+  const baseMatches = records.filter((recommendation) => {
+    const matchesMood = normalizedMood
+      ? recommendation.moods.some((mood) => mood.includes(normalizedMood))
+      : true
+    const matchesGroupFriendly = query.groupFriendly ? recommendation.groupFriendly : true
 
-    if (records.length > 0) {
-      return records
+    return matchesMood && matchesGroupFriendly
+  })
+
+  if (normalizedRegion) {
+    const regionMatches = baseMatches.filter((recommendation) =>
+      recommendation.regions.includes(normalizedRegion),
+    )
+
+    if (regionMatches.length > 0) {
+      const recommendations = regionMatches.slice(0, limit).map(toRecommendationCard)
+      return {
+        recommendations,
+        meta: buildMeta(recommendations, normalizedRegion, normalizedRegion, false),
+      }
+    }
+
+    const broaderRecommendations = baseMatches.slice(0, limit).map(toRecommendationCard)
+    return {
+      recommendations: broaderRecommendations,
+      meta: buildMeta(broaderRecommendations, normalizedRegion, null, true),
     }
   }
 
-  const filtered = mockRecommendations.filter((recommendation) => {
-    if (query.groupFriendly && recommendation.reason === 'group-fit') {
-      return true
-    }
+  const recommendations = baseMatches.slice(0, limit).map(toRecommendationCard)
+  return {
+    recommendations,
+    meta: buildMeta(recommendations, null, null, false),
+  }
+}
 
-    if (query.mood && recommendation.reason === 'mood-match') {
-      return true
-    }
+export async function getRecommendations(
+  query: RecommendationQuery,
+): Promise<RecommendationResult> {
+  const db = await getRequiredDatabase()
+  await assertCollectionReady(
+    db,
+    collectionNames.curatedCollections,
+    'Curated recommendations are unavailable',
+  )
 
-    if (!query.mood && !query.groupFriendly) {
-      return true
-    }
+  const records = await db
+    .collection<CuratedRecommendationRecord>(collectionNames.curatedCollections)
+    .find({})
+    .toArray()
 
-    return recommendation.reason === 'editorial'
-  })
-
-  return filtered.slice(0, limit)
+  return buildRecommendationResult(records, query)
 }
 
 export function getCuratedCollectionsCollectionName() {

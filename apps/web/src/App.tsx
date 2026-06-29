@@ -1,415 +1,301 @@
-import { startTransition, useEffect, useState } from 'react'
+import {
+  startTransition,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 import './App.css'
 import {
   buildNetflixGenreUrl,
-  fetchCategory,
-  fetchRecommendations,
-  getReasonLabel,
-  getSessionId,
+  getRegionLabel,
   searchCategories,
-  trackAnalyticsEvent,
+  toUserMessage,
   type CanonicalCategory,
-  type RecommendationCard,
 } from './lib/api'
+
+const INITIAL_VISIBLE_COUNT = 24
+const SEARCH_DEBOUNCE_MS = 260
 
 function App() {
   const [searchInput, setSearchInput] = useState('')
-  const [moodInput, setMoodInput] = useState('')
-  const [regionInput, setRegionInput] = useState('')
-  const [groupFriendly, setGroupFriendly] = useState(false)
   const [categories, setCategories] = useState<CanonicalCategory[]>([])
-  const [recommendations, setRecommendations] = useState<RecommendationCard[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<CanonicalCategory | null>(null)
   const [isLoadingSearch, setIsLoadingSearch] = useState(false)
-  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false)
-  const [statusMessage, setStatusMessage] = useState('Ready to find something better.')
+  const [searchError, setSearchError] = useState<string | null>(null)
+  const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COUNT)
+  const [statusMessage, setStatusMessage] = useState('Loading category codes.')
+  const resultsScrollerRef = useRef<HTMLDivElement | null>(null)
+  const loadMoreTriggerRef = useRef<HTMLDivElement | null>(null)
+  const latestSearchRequestRef = useRef(0)
+
+  const visibleCategories = categories.slice(0, visibleCount)
+  const hasMoreResults = visibleCount < categories.length
 
   useEffect(() => {
-    const sessionId = getSessionId()
+    const timeoutId = window.setTimeout(() => {
+      void runSearch(searchInput.trim())
+    }, SEARCH_DEBOUNCE_MS)
 
-    void trackAnalyticsEvent({
-      name: 'page_view',
-      sessionId,
-      metadata: {
-        surface: 'home',
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [searchInput])
+
+  useEffect(() => {
+    if (!copiedCode) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCopiedCode(null)
+    }, 1800)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+    }
+  }, [copiedCode])
+
+  useEffect(() => {
+    const trigger = loadMoreTriggerRef.current
+    const scroller = resultsScrollerRef.current
+
+    if (!trigger || !scroller || !hasMoreResults) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const targetEntry = entries[0]
+
+        if (targetEntry?.isIntersecting) {
+          setVisibleCount((currentCount) =>
+            Math.min(currentCount + INITIAL_VISIBLE_COUNT, categories.length),
+          )
+        }
       },
-    })
+      {
+        root: scroller,
+        rootMargin: '0px 0px 180px 0px',
+        threshold: 0.1,
+      },
+    )
 
-    void refreshRecommendations({
-      mood: '',
-      region: '',
-      groupFriendly: false,
-    })
+    observer.observe(trigger)
 
-    void runSearch('')
-  }, [])
+    return () => {
+      observer.disconnect()
+    }
+  }, [categories.length, hasMoreResults])
 
   async function runSearch(query: string) {
+    const requestId = latestSearchRequestRef.current + 1
+    latestSearchRequestRef.current = requestId
+
     setIsLoadingSearch(true)
+    setSearchError(null)
 
-    const results = await searchCategories(query)
+    try {
+      const results = await searchCategories(query, 500)
 
-    startTransition(() => {
-      setCategories(results)
-      setSelectedCategory(results[0] ?? null)
-      setIsLoadingSearch(false)
-      setStatusMessage(
-        results.length > 0
-          ? `Found ${results.length} category options.`
-          : 'No category matches yet. Try a different mood or genre.',
-      )
-    })
-  }
+      if (requestId !== latestSearchRequestRef.current) {
+        return
+      }
 
-  async function refreshRecommendations(input: {
-    mood: string
-    region: string
-    groupFriendly: boolean
-  }) {
-    setIsLoadingRecommendations(true)
+      startTransition(() => {
+        setCategories(results)
+        setVisibleCount(INITIAL_VISIBLE_COUNT)
+        setStatusMessage(
+          results.length > 0
+            ? `Showing ${results.length} category codes.`
+            : 'No category codes matched that search.',
+        )
+        resultsScrollerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      })
+    } catch (error) {
+      if (requestId !== latestSearchRequestRef.current) {
+        return
+      }
 
-    const nextRecommendations = await fetchRecommendations(input)
+      const message = toUserMessage(error, 'Could not load category codes right now.')
 
-    startTransition(() => {
-      setRecommendations(nextRecommendations)
-      setIsLoadingRecommendations(false)
-    })
+      startTransition(() => {
+        setCategories([])
+        setVisibleCount(INITIAL_VISIBLE_COUNT)
+        setSearchError(message)
+        setStatusMessage(message)
+      })
+    } finally {
+      if (requestId !== latestSearchRequestRef.current) {
+        return
+      }
+
+      startTransition(() => {
+        setIsLoadingSearch(false)
+      })
+    }
   }
 
   async function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const sessionId = getSessionId()
     const trimmedQuery = searchInput.trim()
 
-    void trackAnalyticsEvent({
-      name: 'search_submitted',
-      sessionId,
-      metadata: {
-        query: trimmedQuery || 'all',
-      },
-    })
-
     await runSearch(trimmedQuery)
-  }
-
-  async function handleRecommendationRefresh() {
-    await refreshRecommendations({
-      mood: moodInput,
-      region: regionInput,
-      groupFriendly,
-    })
-  }
-
-  async function handleSelectCategory(code: string) {
-    const nextCategory = await fetchCategory(code)
-
-    if (nextCategory) {
-      setSelectedCategory(nextCategory)
-    }
-
-    void trackAnalyticsEvent({
-      name: 'recommendation_selected',
-      sessionId: getSessionId(),
-      metadata: {
-        code,
-      },
-    })
   }
 
   async function handleCopyCode(code: string) {
     try {
       await navigator.clipboard.writeText(code)
+      setCopiedCode(code)
       setStatusMessage(`Copied Netflix code ${code}.`)
-
-      void trackAnalyticsEvent({
-        name: 'code_copied',
-        sessionId: getSessionId(),
-        metadata: {
-          code,
-        },
-      })
     } catch {
+      setCopiedCode(null)
       setStatusMessage(`Copy failed for code ${code}.`)
     }
   }
 
   function handleOpenNetflix(code: string) {
     window.open(buildNetflixGenreUrl(code), '_blank', 'noopener,noreferrer')
-    setStatusMessage(`Opened Netflix genre ${code} in a new tab.`)
-
-    void trackAnalyticsEvent({
-      name: 'open_in_netflix_clicked',
-      sessionId: getSessionId(),
-      metadata: {
-        code,
-      },
-    })
+    setStatusMessage(`Opened Netflix category ${code}.`)
   }
 
   return (
     <main className="app-shell">
-      <section className="hero">
-        <div className="eyebrow">Netflix discovery without the dead-end scroll</div>
-        <div className="hero-grid">
-          <div className="hero-copy">
-            <h1>Find the right Netflix movie faster.</h1>
-            <p>
-              Search smarter categories, grab the exact Netflix code, and jump
-              straight into the part of Netflix that actually fits the night.
+      <section className="catalog-shell">
+        <header className="catalog-header">
+          <h1>Search categories. Copy the code. Open Netflix.</h1>
+          <p className="catalog-intro">
+            Search by title, genre, or keyword and jump straight to the right Netflix category code.
+          </p>
+        </header>
+
+        <section className="search-panel" aria-label="Search category codes">
+          <form className="search-form" onSubmit={handleSearchSubmit}>
+            <label className="search-field">
+              <span>Search categories</span>
+              <input
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Action, anime, family, thriller..."
+                aria-describedby="search-helper"
+              />
+            </label>
+            <p id="search-helper" className="search-helper">
+              Results update automatically while you type.
             </p>
-            <form className="search-panel" onSubmit={handleSearchSubmit}>
-              <label className="field">
-                <span>Search by mood, genre, or intent</span>
-                <input
-                  value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
-                  placeholder="Try thriller, family, anime, hidden gem..."
-                />
-              </label>
-              <div className="search-row">
-                <button type="submit" className="cta-primary">
-                  {isLoadingSearch ? 'Searching...' : 'Search categories'}
-                </button>
-                <button
-                  type="button"
-                  className="cta-secondary"
-                  onClick={() => {
-                    setSearchInput('')
-                    void runSearch('')
-                  }}
-                >
-                  Reset
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="signal-grid" aria-label="What Netflix Codex helps with">
-            <article className="signal-card signal-card--emphasis">
-              <span>Quick win</span>
-              <strong>Copy the code</strong>
-              <p>Paste it into Netflix or jump directly into the matching genre page.</p>
-              <code>Copy + open flow</code>
-            </article>
-            <article className="signal-card">
-              <span>Trust layer</span>
-              <strong>Curated recommendations</strong>
-              <p>Use editorial and rule-based picks instead of endless homepage loops.</p>
-              <code>Search + recommendations</code>
-            </article>
-            <article className="signal-card">
-              <span>Group mode</span>
-              <strong>Safer yes-options</strong>
-              <p>Bias toward categories that are easier to agree on for shared watching.</p>
-              <code>Group-friendly toggle</code>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section className="workspace">
-        <div className="workspace-grid">
-          <section className="panel panel--filters">
-            <div className="panel-header">
-              <h2>Recommendation inputs</h2>
-              <p>Shape the next set of suggestions before you head back to Netflix.</p>
-            </div>
-            <div className="stack">
-              <label className="field">
-                <span>Mood</span>
-                <input
-                  value={moodInput}
-                  onChange={(event) => setMoodInput(event.target.value)}
-                  placeholder="tense, cozy, funny, action..."
-                />
-              </label>
-              <label className="field">
-                <span>Region</span>
-                <input
-                  value={regionInput}
-                  onChange={(event) => setRegionInput(event.target.value)}
-                  placeholder="US, UK, NG..."
-                />
-              </label>
-              <label className="toggle-row">
-                <input
-                  type="checkbox"
-                  checked={groupFriendly}
-                  onChange={(event) => setGroupFriendly(event.target.checked)}
-                />
-                <span>Prefer group-friendly suggestions</span>
-              </label>
+            <div className="search-actions">
+              <button type="submit" className="primary-button">
+                {isLoadingSearch ? 'Searching...' : 'Search'}
+              </button>
               <button
                 type="button"
-                className="cta-primary"
+                className="secondary-button"
                 onClick={() => {
-                  void handleRecommendationRefresh()
+                  setSearchInput('')
+                  void runSearch('')
                 }}
               >
-                {isLoadingRecommendations ? 'Refreshing...' : 'Refresh picks'}
+                Show all
               </button>
             </div>
-          </section>
+          </form>
+        </section>
 
-          <section className="panel panel--results">
-            <div className="panel-header">
-              <h2>Category matches</h2>
-              <p>Choose a category to inspect its code and decide faster.</p>
+        <section className="results-panel" aria-label="Category code results">
+          <div className="results-header">
+            <h2>Category list</h2>
+            <p>{categories.length} results</p>
+          </div>
+
+          {searchError ? (
+            <div className="message-card message-card--error" role="alert">
+              {searchError}
             </div>
-            <div className="card-grid">
-              {categories.map((category) => {
-                const isSelected = selectedCategory?.netflixCode === category.netflixCode
+          ) : null}
+
+          <div
+            className="results-scroller"
+            ref={resultsScrollerRef}
+            tabIndex={0}
+            aria-label="Scrollable category results"
+          >
+            {!searchError && categories.length === 0 && !isLoadingSearch ? (
+              <div className="message-card">No categories found.</div>
+            ) : null}
+
+            <ul className="category-list">
+              {visibleCategories.map((category) => {
+                const isCopied = copiedCode === category.netflixCode
 
                 return (
-                  <article
-                    key={category.netflixCode}
-                    className={`result-card${isSelected ? ' result-card--selected' : ''}`}
-                  >
-                    <button
-                      type="button"
-                      className="result-card__body"
-                      onClick={() => {
-                        void handleSelectCategory(category.netflixCode)
-                      }}
-                    >
-                      <div className="result-card__meta">
-                        <span className="pill">Code {category.netflixCode}</span>
-                        <span className="pill pill--muted">{category.slug}</span>
+                  <li key={category.netflixCode} className="category-row">
+                    <div className="category-main">
+                      <div className="category-code">{category.netflixCode}</div>
+                      <div className="category-copy">
+                        <h3>{category.title}</h3>
+                        <p>{category.summary}</p>
+                        <div className="category-meta">
+                          <span>{category.slug}</span>
+                          {category.regions.length > 0 ? (
+                            <span>{getRegionLabel(category.regions)}</span>
+                          ) : null}
+                        </div>
                       </div>
-                      <h3>{category.title}</h3>
-                      <p>{category.summary}</p>
-                      <ul className="tag-list">
-                        {category.tags.map((tag) => (
-                          <li key={tag}>{tag}</li>
-                        ))}
-                      </ul>
-                    </button>
-                    <div className="result-card__actions">
+                    </div>
+
+                    <div className="category-actions">
                       <button
                         type="button"
-                        className="mini-button"
+                        className={isCopied ? 'secondary-button secondary-button--success' : 'secondary-button'}
                         onClick={() => {
                           void handleCopyCode(category.netflixCode)
                         }}
+                        aria-label={
+                          isCopied
+                            ? `Copied Netflix code ${category.netflixCode}`
+                            : `Copy Netflix code ${category.netflixCode}`
+                        }
                       >
-                        Copy code
+                        {isCopied ? 'Copied' : 'Copy code'}
                       </button>
                       <button
                         type="button"
-                        className="mini-button mini-button--ghost"
-                        onClick={() => handleOpenNetflix(category.netflixCode)}
+                        className="primary-button"
+                        onClick={() => {
+                          handleOpenNetflix(category.netflixCode)
+                        }}
                       >
                         Open Netflix
                       </button>
                     </div>
-                  </article>
+                  </li>
                 )
               })}
-            </div>
-          </section>
-        </div>
-      </section>
+            </ul>
 
-      <section className="workspace workspace--secondary">
-        <div className="workspace-grid workspace-grid--secondary">
-          <section className="panel panel--focus">
-            <div className="panel-header">
-              <h2>Selected category</h2>
-              <p>Use this as the fast path when you already know the right lane.</p>
-            </div>
-            {selectedCategory ? (
-              <div className="focus-card">
-                <div className="focus-card__top">
-                  <div>
-                    <span className="pill">Netflix code</span>
-                    <h3>{selectedCategory.title}</h3>
-                  </div>
-                  <code>{selectedCategory.netflixCode}</code>
-                </div>
-                <p>{selectedCategory.summary}</p>
-                <ul className="tag-list">
-                  {selectedCategory.tags.map((tag) => (
-                    <li key={tag}>{tag}</li>
-                  ))}
-                </ul>
-                <div className="cta-row">
-                  <button
-                    type="button"
-                    className="cta-primary"
-                    onClick={() => {
-                      void handleCopyCode(selectedCategory.netflixCode)
-                    }}
-                  >
-                    Copy {selectedCategory.netflixCode}
-                  </button>
-                  <button
-                    type="button"
-                    className="cta-secondary"
-                    onClick={() => handleOpenNetflix(selectedCategory.netflixCode)}
-                  >
-                    Open in Netflix
-                  </button>
-                </div>
+            {hasMoreResults ? (
+              <div className="load-more-zone">
+                <div ref={loadMoreTriggerRef} className="load-more-trigger" aria-hidden="true" />
+                <button
+                  type="button"
+                  className="secondary-button load-more-button"
+                  onClick={() => {
+                    setVisibleCount((currentCount) =>
+                      Math.min(currentCount + INITIAL_VISIBLE_COUNT, categories.length),
+                    )
+                  }}
+                >
+                  Load more
+                </button>
               </div>
-            ) : (
-              <div className="empty-state">Pick a category to inspect its code.</div>
-            )}
-          </section>
+            ) : null}
+          </div>
+        </section>
 
-          <section className="panel panel--recommendations">
-            <div className="panel-header">
-              <h2>Recommendation feed</h2>
-              <p>Start here if you want a stronger first nudge than Netflix usually gives.</p>
-            </div>
-            <div className="recommendation-list">
-              {recommendations.map((recommendation) => (
-                <article key={recommendation.title} className="recommendation-card">
-                  <div className="recommendation-card__meta">
-                    <span className="pill">{getReasonLabel(recommendation.reason)}</span>
-                    <span className="pill pill--muted">
-                      {recommendation.confidenceLabel} confidence
-                    </span>
-                  </div>
-                  <h3>{recommendation.title}</h3>
-                  <p>Netflix code {recommendation.categoryCode}</p>
-                  <div className="result-card__actions">
-                    <button
-                      type="button"
-                      className="mini-button"
-                      onClick={() => {
-                        void handleCopyCode(recommendation.categoryCode)
-                      }}
-                    >
-                      Copy code
-                    </button>
-                    <button
-                      type="button"
-                      className="mini-button mini-button--ghost"
-                      onClick={() => handleOpenNetflix(recommendation.categoryCode)}
-                    >
-                      Open Netflix
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        </div>
-      </section>
-
-      <p className="status-banner" aria-live="polite">
-        {statusMessage}
-      </p>
-      <section className="foundation-strip">
-        <h2>What PR 5 adds</h2>
-        <ul>
-          <li>Search-backed category discovery</li>
-          <li>Recommendation feed with filters</li>
-          <li>Copy and direct-open Netflix actions</li>
-          <li>Best-effort analytics wiring</li>
-        </ul>
+        <p className="status-banner" aria-live="polite">
+          {statusMessage}
+        </p>
       </section>
     </main>
   )

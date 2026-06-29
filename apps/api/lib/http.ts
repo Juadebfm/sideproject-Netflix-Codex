@@ -11,12 +11,19 @@ export type JsonValue =
 export type ApiRequest = IncomingMessage
 export type ApiResponse = ServerResponse<IncomingMessage>
 
+export function setCorsHeaders(res: ApiResponse) {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+}
+
 export function sendJson(
   res: ApiResponse,
   statusCode: number,
   payload: JsonValue,
 ) {
   res.statusCode = statusCode
+  setCorsHeaders(res)
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
   res.end(JSON.stringify(payload))
 }
