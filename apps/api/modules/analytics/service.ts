@@ -4,11 +4,15 @@ import { collectionNames } from '../../lib/collection-name.js'
 import type { AnalyticsEvent } from './types.js'
 
 export async function trackAnalyticsEvent(
-  db: Db,
+  db: Db | null,
   event: AnalyticsEvent,
 ): Promise<void> {
-  void db
-  void event
+  if (!db) {
+    return
+  }
+
+  const collection = db.collection<AnalyticsEvent>(collectionNames.analyticsEvents)
+  await collection.insertOne(event)
 }
 
 export function getAnalyticsCollectionName() {
