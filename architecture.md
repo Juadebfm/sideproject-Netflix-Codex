@@ -28,10 +28,11 @@
 
 Current sources:
 
-- A curated starter dataset remains the highest-priority manual source for seeded summaries, tags, and recommendation records.
+- A curated starter dataset remains a recommendation-only manual source and no longer feeds public catalog titles or descriptions.
 - `Netflix-Codes` is the first live remote source and supplies the broader public category-code catalog.
 - `Teen Vogue` is the second live remote source and expands catalog coverage through a JSON-LD article-body code list, while remaining lower priority than `Netflix-Codes` for conflicting labels.
-- Canonical records keep aggregated `sourceRecordIds` so one public row can be traced back to multiple raw source records.
+- Canonical records keep aggregated provenance such as `sourceRecordIds`, `sourceLabels`, and `titleSourceLabel` so one public row can be traced back to multiple raw source records.
+- Public catalog rows are now strict verified records: code, source-backed title, verification state, source labels, and region signals only. Invented public descriptions are out of contract.
 - The catalog can be refreshed through the protected cron path or the local `npm run db:seed` workflow.
 
 ## Operational Rules

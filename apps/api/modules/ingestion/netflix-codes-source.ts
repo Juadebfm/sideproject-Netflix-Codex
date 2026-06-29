@@ -80,20 +80,21 @@ function buildCategoryCandidate(input: {
   timestamp: string
   code: string
   title: string
-  summary: string
   tags: string[]
 }): PreparedCanonicalCategoryCandidate {
-  const { source, sourceRecordId, timestamp, code, title, summary, tags } = input
+  const { source, sourceRecordId, timestamp, code, title, tags } = input
 
   return {
     netflixCode: code,
     slug: slugify(title),
     title,
-    summary,
     tags,
     regions: [],
     regionSignal: 'best-effort' as const,
     sourceRecordIds: [sourceRecordId],
+    sourceLabels: [source.label],
+    titleSourceLabel: source.label,
+    verificationState: source.kind === 'local-starter' ? 'manual-curated' : 'source-backed',
     createdAt: timestamp,
     updatedAt: timestamp,
     sourceId: source.id,
@@ -142,7 +143,6 @@ export function prepareNetflixCodesSnapshotFromHtml(
           timestamp,
           code: String(category.code),
           title: parentTitle,
-          summary: `Imported from ${source.label}.`,
           tags: buildTags(parentTitle),
         }),
       )
@@ -170,7 +170,6 @@ export function prepareNetflixCodesSnapshotFromHtml(
           timestamp,
           code: String(childCode.code),
           title: childTitle,
-          summary: `Imported from ${source.label} under ${parentTitle}.`,
           tags: buildTags(childTitle, parentTitle),
         }),
       )

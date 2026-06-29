@@ -14,14 +14,9 @@ import { prepareTeenVogueSnapshotFromHtml } from './teen-vogue-source.js'
 test('prepareStarterCatalogSnapshot builds raw and canonical records with provenance', () => {
   const snapshot = prepareStarterCatalogSnapshot(starterCatalogSource, '2026-06-29T00:00:00.000Z')
 
-  assert.equal(snapshot.rawRecords.length, 8)
-  assert.equal(snapshot.canonicalCategories.length, 4)
+  assert.equal(snapshot.rawRecords.length, 4)
+  assert.equal(snapshot.canonicalCategories.length, 0)
   assert.equal(snapshot.curatedRecommendations.length, 4)
-
-  for (const category of snapshot.canonicalCategories) {
-    assert.equal(category.sourceRecordIds.length, 1)
-    assert.equal(category.createdAt, '2026-06-29T00:00:00.000Z')
-  }
 
   for (const recommendation of snapshot.curatedRecommendations) {
     assert.equal(recommendation.sourceRecordIds.length, 1)
@@ -50,6 +45,8 @@ test('prepareNetflixCodesSnapshotFromHtml parses parent and child category codes
   assert.equal(snapshot.canonicalCategories.length, 2)
   assert.equal(snapshot.canonicalCategories[0].sourcePriority, netflixCodesSource.priority)
   assert.equal(snapshot.canonicalCategories[1].title, 'Action comedies')
+  assert.deepEqual(snapshot.canonicalCategories[0].sourceLabels, ['Netflix-Codes'])
+  assert.equal(snapshot.canonicalCategories[0].verificationState, 'source-backed')
 })
 
 test('prepareTeenVogueSnapshotFromHtml parses code lines from articleBody JSON-LD', () => {
@@ -75,12 +72,8 @@ test('prepareTeenVogueSnapshotFromHtml parses code lines from articleBody JSON-L
   assert.equal(snapshot.canonicalCategories[2].title, 'Zombie Horror Movies')
 })
 
-test('mergeCanonicalCategories keeps higher-priority records and unions provenance', () => {
-  const starterSnapshot = prepareStarterCatalogSnapshot(
-    starterCatalogSource,
-    '2026-06-29T00:00:00.000Z',
-  )
-  const remoteSnapshot = prepareNetflixCodesSnapshotFromHtml(
+test('mergeCanonicalCategories keeps higher-priority remote titles and unions provenance', () => {
+  const netflixCodesSnapshot = prepareNetflixCodesSnapshotFromHtml(
     `
       <html>
         <body>
@@ -91,22 +84,35 @@ test('mergeCanonicalCategories keeps higher-priority records and unions provenan
       </html>
     `,
     netflixCodesSource,
+    '2026-06-29T00:00:00.000Z',
+  )
+  const teenVogueSnapshot = prepareTeenVogueSnapshotFromHtml(
+    `
+      <html>
+        <head>
+          <script type="application/ld+json">
+            {"@context":"http://schema.org","@type":"NewsArticle","articleBody":"Action & Adventure (1365)\\nRomantic Comedies (5475)"}
+          </script>
+        </head>
+      </html>
+    `,
+    teenVogueSource,
     '2026-06-29T01:00:00.000Z',
   )
 
   const merged = mergeCanonicalCategories([
-    ...starterSnapshot.canonicalCategories,
-    ...remoteSnapshot.canonicalCategories,
+    ...netflixCodesSnapshot.canonicalCategories,
+    ...teenVogueSnapshot.canonicalCategories,
   ])
 
   const actionCategory = merged.find((category) => category.netflixCode === '1365')
 
   assert.ok(actionCategory)
-  assert.equal(
-    actionCategory.summary,
-    'Big-energy films for nights when browsing needs to end quickly.',
-  )
+  assert.equal(actionCategory.title, 'Action & adventure')
   assert.equal(actionCategory.sourceRecordIds.length, 2)
+  assert.deepEqual(actionCategory.sourceLabels, ['Netflix-Codes', 'Teen Vogue'])
+  assert.equal(actionCategory.titleSourceLabel, 'Netflix-Codes')
+  assert.equal(actionCategory.verificationState, 'source-backed')
   assert.ok(
     merged.some((category) => category.netflixCode === '43040' && category.title === 'Action comedies'),
   )
