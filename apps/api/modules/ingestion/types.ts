@@ -4,7 +4,11 @@ import type { CuratedRecommendationRecord } from '../recommendations/types.js'
 export type IngestionSource = {
   id: string
   label: string
-  kind: 'local-starter' | 'remote-next-data' | 'remote-json-ld-article'
+  kind:
+    | 'local-starter'
+    | 'remote-next-data'
+    | 'remote-json-ld-article'
+    | 'remote-markdown-readme'
   version: string
   priority: number
   fetchUrl?: string

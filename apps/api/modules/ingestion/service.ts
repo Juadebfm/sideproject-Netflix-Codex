@@ -8,6 +8,9 @@ import {
   type SeedRecommendation,
 } from '../seed-data.js'
 import {
+  fetchGithubNetflixCodesSnapshot,
+} from './github-netflix-codes-source.js'
+import {
   fetchNetflixCodesSnapshot,
 } from './netflix-codes-source.js'
 import { fetchTeenVogueSnapshot } from './teen-vogue-source.js'
@@ -50,10 +53,20 @@ export const teenVogueSource: IngestionSource = {
   fetchUrl: 'https://www.teenvogue.com/story/netflix-secret-codes-unlock-hidden-shows-movies',
 }
 
+export const githubNetflixCodesSource: IngestionSource = {
+  id: 'github-netflix-codes',
+  label: 'GitHub Netflix-Codes README',
+  kind: 'remote-markdown-readme',
+  version: '2026-06-30',
+  priority: 50,
+  fetchUrl: 'https://raw.githubusercontent.com/bigsk1/netflix-codes/main/README.md',
+}
+
 const configuredSources: IngestionSource[] = [
   starterCatalogSource,
   netflixCodesSource,
   teenVogueSource,
+  githubNetflixCodesSource,
 ]
 
 export async function listIngestionSources(): Promise<IngestionSource[]> {
@@ -357,6 +370,10 @@ async function prepareSnapshotForSource(
 
   if (source.kind === 'remote-json-ld-article') {
     return fetchTeenVogueSnapshot(source, timestamp)
+  }
+
+  if (source.kind === 'remote-markdown-readme') {
+    return fetchGithubNetflixCodesSnapshot(source, timestamp)
   }
 
   throw new Error(`Unsupported ingestion source kind: ${source.kind}`)
