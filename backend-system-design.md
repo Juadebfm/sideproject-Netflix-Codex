@@ -111,7 +111,7 @@
 ### Open Questions
 
 - What level of completeness is expected for code coverage: curated best-effort, source-vetted completeness, or near-exhaustive catalog capture?
-- Which public sources are acceptable for ingestion under the project's legal and operational standards after the current `Netflix-Codes` and `Teen Vogue` integrations?
+- Which public sources are acceptable for ingestion under the project's legal and operational standards after the current `Netflix-Codes`, `Teen Vogue`, and `GitHub Netflix-Codes README` integrations?
 - How much user-specific persistence is needed in the MVP beyond anonymous analytics?
 - Whether recommendation quality will begin as editorial curation, rule-based scoring, or a hybrid approach.
 - How reliable region-availability data can be without a paid provider.
